@@ -1,14 +1,19 @@
+const bubbleSort = require('../Sorts/bubbleSort');
+const quickSort = require('../Sorts/quickSort');
+
 class DynamicArray {
     #arr;
     #size;
     #capacity;
     #GROWTH = 2;
+    #fill;
 
-    constructor(cap = 0, fill = 0) {
+    constructor(cap = 0,fill = 0) {
         if(cap < 0) throw new RangeError('Not valid capacity');
         this.#size = 0;
         this.#capacity  = cap;
-        this.#arr = new Array(this.#size).fill(fill);
+        this.#fill = fill;
+        this.#arr = new Int32Array(this.#capacity).fill(this.#fill);
     }
 
     /* ================= Capacity ================= */
@@ -27,189 +32,246 @@ class DynamicArray {
 
     reserve(n) {
         if(n <= this.#capacity) return;
-        
-        //   - allocate new buffer of size n
-        //   - copy first "size" elements
-        //   - replace old buffer
-        //   - update capacity
+        this.#capacity = n;
+        const newAddress = new Int32Array(n).fill(this.#fill);
+        for(let i = 0;i < this.#size;++i){
+            newAddress[i] = this.#arr[i];
+        };
+        this.#arr = newAddress;
     }
 
     shrinkToFit() {
-        // Must reallocate buffer so that:
-        // capacity === size
-        // Only valid elements are kept
+        this.#capacity = this.#size;
     }
 
     clear() {
-        // Must set size = 0
-        // Capacity must remain unchanged
+        this.#size = 0;
     }
 
     /* ================= Element Access ================= */
 
     at(i) {
-        // If i < 0 or i >= size → throw Error
-        // Otherwise return element at index i
+        if(i < 0 || i >= this.#size || !Number.isInteger(i)) throw new RangeError('invalid Index');
+        return this.#arr[i];
     }
 
     set(i, value) {
-        // If index invalid → throw Error
-        // If value is not a number → throw Error
-        // Otherwise overwrite element at index i
+        if(i < 0 || i >= this.#size || !Number.isInteger(i)) throw new RangeError('invalid Index');
+        if(!Number.isInteger(value)) throw new TypeError('Invalid Value');
+        this.#arr[i] = value;
     }
 
     front() {
-        // Must return first element
-        // Equivalent to at(0)
+        if(this.#size === 0) throw new RangeError('size is 0');
+        return this.#arr[0];
     }
 
     back() {
-        // Must return last element
-        // Equivalent to at(size - 1)
+        if(this.#size === 0) throw new RangeError('size is 0');
+        return this.#arr[this.#size - 1];
     }
 
     toArray() {
-        // Must return a normal JS array
-        // Must include only elements [0 ... size-1]
-        // Must NOT include unused capacity
+        const newArray = new Array(this.#size);
+        for(let i = 0;i < this.#size;++i){
+            newArray[i] = this.#arr[i];
+        }
+        return newArray;
     }
 
     /* ================= Modifiers ================= */
 
     pushBack(value) {
-        // If value is not number → throw Error
-        // If size === capacity:
-        //   - grow capacity (usually capacity * 2)
-        // Append value at the end
-        // Increase size by 1
+        if(!Number.isInteger(value)) throw new TypeError('Invalid Value');
+        if(this.#size === this.#capacity || this.#size === 0) this.#resize();
+
+        this.#arr[this.#size++] = value;
     }
 
     popBack() {
-        // If empty → throw Error
-        // Remove last element
-        // Decrease size by 1
-        // Return removed value
+        if (this.#size === 0) throw new RangeError('array is empty');
+        return this.#arr[--this.#size];
     }
 
     insert(pos, value) {
-        // If pos < 0 or pos > size → throw Error
-        // If buffer full → resize
-        // Shift elements right from pos
-        // Insert value at pos
-        // Increase size
+        if(pos < 0 ||  pos > this.#size || !Number.isInteger(pos)) throw new RangeError('Invalid Position');
+        if(!Number.isInteger(value)) throw new TypeError('invalid value type');
+        if(this.#size === this.#capacity) this.#resize();
+
+        for(let i = this.#size; i > pos ;--i){
+            this.#arr[i] = this.#arr[i - 1]
+        }
+        this.#arr[pos] = value;
     }
 
     erase(pos) {
-        // If pos invalid → throw Error
-        // Shift elements left from pos
-        // Decrease size
+        if(pos < 0 || pos >= this.#size || !Number.isInteger(pos)) throw new RangeError('Invalid Pos');
+        for(let i = pos; i < this.#size - 1;++i) {
+           this.swap(i,i+1)
+        }
+        this.#size--;
     }
 
-    #resize(n) {
-        // Must allocate new buffer of size n
-        // Copy min(size, n) elements
-        // If n < size → truncate size
-        // Update capacity
+    #resize(){
+        const newAddress = new Int32Array(this.#capacity === 0 ? 1: this.#capacity *= this.#GROWTH).fill(0);
+        for(let i = 0;i < this.#size;++i){
+            newAddress[i] = this.at(i);
+        }
+        this.#arr = newAddress;
     }
 
     swap(i, j) {
-        // If any index invalid → throw Error
-        // Swap values at indices i and j
+        if(!(Number.isInteger(i) && Number.isInteger(j))) throw new TypeError("Invalid index");
+        if(j < 0 ||j >= this.#size) throw new RangeError('invalid j range');
+        if(i < 0 ||i >= this.#size) throw new RangeError("invalid i Range");
+        [this.#arr[i],this.#arr[j]] = [this.#arr[j],this.#arr[i]];
     }
 
     /* ================= Iteration ================= */
 
     [Symbol.iterator]() {
-        // Must allow:
-        // for (let x of arr)
-        // Should iterate from index 0 to size-1
+        let i = 0;
+
+        return {
+            next: () => {
+                return {
+                    done:i >= this.#size, value: this.#arr[i++]
+                }
+            }
+        }
     }
 
-    values() {
-        // Must return iterator over values
-        // Same behavior as Symbol.iterator
+   *values() {
+        for(let i = 0; i < this.#size;++i){
+            yield this.at(i);
+        }
     }
 
-    keys() {
-        // Must return iterator over indices
-        // Values: 0, 1, 2, ... size-1
+    *keys() {
+        for(let i = 0;i < this.#size;++i){
+            yield i;
+        }
     }
 
-    entries() {
-        // Must return iterator over [index, value] pairs
-        // Example: [0, 10], [1, 20], ...
+    *entries() {
+        for(let i = 0; i < this.#size;++i){
+            yield [i, this.at(i)];
+        }
     }
 
     /* ================= High Order ================= */
 
     forEach(fn) {
-        // Must call fn(value, index, thisArray)
-        // For each element from 0 to size-1
-        // Must not modify the array
+        for(let i = 0;i < this.#size;++i){
+            fn(this.at(i),i,this.#arr);
+        }
     }
 
     map(fn) {
-        // Must return new DynamicArray
-        // Each element = fn(oldValue, index, thisArray)
+        const res = new DynamicArray();
+        for(let i = 0; i < this.#size;++i){
+            res.pushBack(fn(this.at(i),i,this.#arr));
+        }
+        return res;
     }
 
     filter(fn) {
-        // Must return new DynamicArray
-        // Only elements where fn(...) === true
+        const res = new DynamicArray();
+        for(let i = 0;i < this.#size;++i){
+            if(fn(this.at(i),i,this.#arr)){
+                res.pushBack(this.at(i));
+            }
+        }
+        return res;
     }
 
     reduce(fn, initial) {
-        // If empty and initial undefined → throw Error
-        // If initial exists:
-        //   acc = initial, start from index 0
-        // Else:
-        //   acc = first element, start from index 1
-        // Must return accumulated value
+        if(typeof fn != 'function') throw new RangeError('callback not given');
+        if(this.#size === 0) throw new RangeError('array is empty')
+        let acc
+        if(initial)
+            acc = initial
+        else acc = this.at(0);
+        for(let i = initial ? 0 : 1;i < this.#size;++i){
+            acc = fn(acc,this.at(i),i, this.#arr);
+        }
+        return acc;
     }
 
     some(fn) {
-        // Must return true if any element satisfies fn
-        // Otherwise false
+        for(let i = 0;i < this.#size;++i){
+            if(fn(this.at(i),i,this.#arr)){
+                return  true;
+            }
+        }
+        return false;
     }
 
     every(fn) {
-        // Must return true only if all elements satisfy fn
+        for(let i = 0; i < this.#size;++i){
+            if(!fn(this.at(i),i,this.#arr)){
+                return false;
+            }
+        }
+        return true;
     }
 
     find(fn) {
-        // Must return first value where fn(...) === true
-        // If not found → return undefined
+        for(let i = 0;i < this.#size;++i){
+            if(fn(this.at(i),i,this.#arr)){
+                return this.at(i);
+            }
+        }
     }
 
     findIndex(fn) {
-        // Must return index of first match
-        // If not found → return -1
+        for(let i = 0;i < this.#size;++i){
+            if(fn(this.at(i),i,this.#arr)){
+                return i;
+            }
+        }
+        return -1;
     }
 
     includes(value) {
-        // Must return true if value exists in array
-        // Otherwise false
+        for(let i = 0;i < this.#size;++i){
+            if(this.at(i) === value) return true;
+        }
+        return false;
     }
 
     /* ================= Extensions ================= */
 
     reverse() {
-        // Must reverse elements in-place
-        // No extra array allowed
+        for(let i = 0; i < this.#size / 2;++i){
+           this.swap(i,this.#size - i - 1);
+        }
     }
 
     sort(compareFn) {
-        // Must sort array in-place
-        // Must NOT use built-in Array.sort
-        // You must implement your own algorithm
+        if(this.#size >= 100) {
+            quickSort(compareFn,this.#arr);
+        } else {
+            bubbleSort(compareFn,this.#arr);
+        }
     }
 
-    clone() {
-        // Must return deep copy of this DynamicArray
+    clone(arr = this.#arr) {
+        if (!(arr instanceof Int32Array)) return arr;
+       let clone = new Int32Array(arr.length);
+       for(let i = 0; i < arr.length;++i){
+        clone[i] = this.clone(arr[i]);
+       }
+       return clone;
     }
 
     equals(other) {
-        // Must return true if:
-        // same size AND all elements equal
+        if(other.size() === this.size()){
+            for(let i = 0;i < this.size();++i){
+                if(this.at(i) !== other.at(i)) return false;
+            }   
+            return true;
+        }
+        return false
     }
 }
