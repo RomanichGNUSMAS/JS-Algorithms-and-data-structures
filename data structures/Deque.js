@@ -88,47 +88,59 @@ class Deque {
     }
 
     pop_front() {
-        // If empty → throw Error
-        // Must remove front element
-        // Must move front forward circularly
-        // Must decrease size
-        // Must return removed value
+        if (this.empty()) throw new RangeError('Out of Range');
+        let tmp = this.at(this.#front);
+        this.#arr[this.#front] = undefined;
+        this.#front--;
+        this.#size--;
+        return tmp;
     }
 
     pop_back() {
-        // If empty → throw Error
-        // Must remove last element
-        // Must decrease size
-        // Must return removed value
+        if (this.empty()) throw new RangeError('Out of Range');
+        let tmp = this.at((this.#front - 1 + this.#cap) % this.#cap);
+        this.#arr[(this.#front - 1 + this.#cap) % this.#cap] = undefined;
+        this.#size--;
+        return tmp;
     }
 
     clear() {
-        // Must reset deque to empty state
-        // Must keep current capacity
-        // Must reset front to 0
-        // Must set size to 0
+        this.#arr = new Array(this.#cap).fill(undefined);
+        this.#size = 0;
+        this.#front = 0;
     }
 
     /* ================= Extended Professional Methods ================= */
 
     reserve(newCapacity) {
-        // If newCapacity <= current capacity → do nothing
-        // Else:
-        //   Allocate new buffer
-        //   Copy elements in logical order
-        //   Reset front to 0
+        if (newCapacity <= this.#cap) return;
+        let newAddress = new Array(newCapacity).fill(undefined);
+        for (let i = 0; i < this.#size; i++) {
+            newAddress[i] = newCapacity[i];
+        }
+        this.#cap = newCapacity;
+        this.#front = 0;
+        this.#arr = newAddress;
     }
 
     shrinkToFit() {
-        // Must reduce capacity to size
-        // Must reallocate buffer
-        // Must preserve order
+        let newAddress = new Array(this.#size).fill(undefined);
+        for (let i = 0; i < this.#size; i++) {
+            newAddress[i] = this.#arr[i];
+        }
+        this.#cap = this.#size;
+        this.#arr = newAddress;
     }
 
     rotateLeft(k = 1) {
-        // Must rotate deque left by k steps
-        // Logical front shifts forward
-        // Must work with k > size
+        if (k <= 0) return;
+
+        let count = 0;
+        k %= this.#arr.cap;
+        for (let i of this.#arr.slice(this.capacity() - k).concat(this.#arr.slice(0, this.capacity() - k))) {
+            this.#arr[count++] = i
+        }
+
     }
 
     rotateRight(k = 1) {
@@ -137,25 +149,33 @@ class Deque {
     }
 
     swap(i, j) {
-        // If indices invalid → throw Error
-        // Must swap logical elements
+        if (i < 0 || i >= this.size()) throw new RangeError('Out of Range');
+        if (j < 0 || j >= this.size()) throw new RangeError('Out of Range');
+        [this.#arr[this.#index(i)], this.#arr[this.#index(j)]] = [this.#arr[this.#index(j)], this.#arr[this.#index(i)]]
     }
 
     /* ================= Search & Utilities ================= */
 
     find(value) {
-        // Must return first logical index of value
-        // If not found → return -1
+        for (let i = 0; i < this.#size; i++) {
+            if (this.at(i) === value) return this.#index(i);
+        }
+        return -1;
     }
 
     includes(value) {
-        // Must return true if value exists
-        // Otherwise false
+        for (let i = 0; i < this.#size; i++) {
+            if (this.at(i) === value) return true;
+        }
+        return false;
     }
 
     toArray() {
-        // Must return normal JS array
-        // Must preserve logical order
+        let arr = new Array(this.#size);
+        for (let i = 0; i < this.size(); ++i) {
+            arr[i] = this.#arr[i];
+        }
+        return arr;
     }
 
     clone() {
@@ -164,45 +184,73 @@ class Deque {
     }
 
     equals(otherDeque) {
-        // Must return true if:
-        // same size AND same logical values
+        if (otherDeque.size() !== this.size()) return false;
+        for (let i = 0; i < this.size(); i++) {
+            if (this.at(i) !== otherDeque.at(i)) return false;
+        }
+        return true;
     }
 
     /* ================= Iteration ================= */
 
     [Symbol.iterator]() {
-        // Must iterate from front → back
-        // Must not expose internal buffer layout
+        let i = 0;
+        return {
+            next: () => {
+                if (i >= this.size()) return {value: undefined, done: true};
+                return {value: this.at(i++), done: false};
+            }
+        }
     }
 
-    values() {
-        // Must return value iterator
+    * values() {
+        yield* this.#arr;
     }
 
-    keys() {
-        // Must return iterator of logical indices 0 → size-1
+    * keys() {
+        for (let i = 0; i < this.size(); i++) {
+            yield i;
+        }
     }
 
-    entries() {
-        // Must return iterator of [index, value]
+    * entries() {
+        for (let i = 0; i < this.size(); i++) {
+            yield [i, this.at(i)];
+        }
     }
 
     /* ================= Functional Style ================= */
 
     forEach(fn) {
-        // Must call fn(value, index, thisDeque)
+        for (let i = 0; i < this.size(); ++i) {
+            fn(this.at(i), i, this.#arr);
+        }
     }
 
     map(fn) {
-        // Must return new deque with mapped values
+        const res = [];
+        for (let i = 0; i < this.size(); ++i) {
+            res.push(fn(this.at(i), i, this.#arr));
+        }
+        return res;
     }
 
     filter(fn) {
-        // Must return new deque with filtered values
+        const res = [];
+        for (let i = 0; i < this.size(); ++i) {
+            if (fn(this.at(i), i, this.#arr)) {
+                res.push(this.at(i));
+            }
+        }
+        return res;
     }
 
     reduce(fn, initial) {
-        // Must behave like Array.reduce
-        // Must throw if empty and no initial value
+        let acc = !initial && initial !== 0 ? initial : this.at(0);
+
+        for (let i = 0; i < this.size(); ++i) {
+            acc = fn(acc, this.at(i));
+        }
+        return acc;
     }
 }
