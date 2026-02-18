@@ -1,201 +1,208 @@
 class Deque {
-  #arr;
-  #front = 0;
-  #back = -1;
-  #size = 0;
-  #cap;
-  constructor(capacity = 8) {
-    if(capacity < 2) this.#cap = 8;
-    else this.#cap = capacity
-    this.#arr = new Array(this.#cap);
-  }
+    #arr;
+    #front = 0;
+    #size = 0;
+    #cap;
 
-  /* ================= Basic State ================= */
+    constructor(capacity = 8) {
+        if (capacity < 2) this.#cap = 8;
+        else this.#cap = capacity
+        this.#arr = new Array(this.#cap).fill(undefined);
+    }
 
-  size() {
-    return this.#size
-  }
+    /* ================= Basic State ================= */
 
-  capacity() {
-    return this.#cap;
-  }
+    size() {
+        return this.#size
+    }
 
-  empty() {
-    return this.#size === 0;
-  }
+    capacity() {
+        return this.#cap;
+    }
 
-  full() {
-    return this.#size === this.#cap;
-  }
+    empty() {
+        return this.#size === 0;
+    }
 
-  /* ================= Internal Helpers ================= */
+    full() {
+        return this.#size === this.#cap;
+    }
 
-  #mod(i) {
-    if(i < 0 || i > this.#cap - 1 || !Number.isInteger(i)) throw new RangeError('Out of range');
-    return i % this.#cap;
-  }
+    /* ================= Internal Helpers ================= */
 
-  #index(i) {
-    if(this.empty()) throw new RangeError('Out of Range');
-    
-  }
+    #mod(i) {
+        if (i < 0 || i > this.#cap - 1 || !Number.isInteger(i)) throw new RangeError('Out of range');
+        return i % this.#cap;
+    }
 
-  #ensureCapacityForOneMore() {
-    // If size < capacity → do nothing
-    // If size === capacity:
-    //   Allocate new buffer with capacity * 2
-    //   Copy elements in logical order
-    //   Reset front to 0
-  }
+    #index(i) {
+        if (this.empty()) throw new RangeError('Out of Range');
+        return this.#mod(i + this.#size);
+    }
 
-  /* ================= Element Access ================= */
+    #resize() {
+        let arr = new Deque(this.#cap *= 2);
+        for (let i of this) {
+            arr.push_back(i)
+        }
+        this.#arr = arr;
+    }
 
-  front() {
-    // If empty → throw Error
-    // Must return first element
-  }
+    #ensureCapacityForOneMore() {
+        if (this.#size < this.#cap) return;
+        this.#resize();
+        this.#front = 0;
+    }
 
-  back() {
-    // If empty → throw Error
-    // Must return last element
-  }
+    /* ================= Element Access ================= */
 
-  at(i) {
-    // If i invalid → throw Error
-    // Must return element at logical index i
-  }
+    front() {
+        if (this.empty()) throw new RangeError('Out of Range');
+        return this.at(this.#front);
+    }
 
-  /* ================= Modifiers ================= */
+    back() {
+        if (this.empty()) throw new RangeError('Out of Range');
+        return this.#arr[(this.#front - 1 + this.#cap) % this.#cap];
+    }
 
-  push_back(value) {
-    // Must ensure capacity
-    // Must insert value after last element
-    // Must increase size
-  }
+    at(i) {
+        if (i < 0 || this.#size <= i || !Number.isInteger(i)) throw new RangeError('Out of Range');
+        return this.#arr[this.#index(i)];
+    }
 
-  push_front(value) {
-    // Must ensure capacity
-    // Must move front backward circularly
-    // Must insert value at new front
-    // Must increase size
-  }
+    /* ================= Modifiers ================= */
 
-  pop_front() {
-    // If empty → throw Error
-    // Must remove front element
-    // Must move front forward circularly
-    // Must decrease size
-    // Must return removed value
-  }
+    push_back(value) {
+        if (this.full()) this.#ensureCapacityForOneMore();
+        this.#front = (this.front() - 1 + this.#cap) % this.#cap;
+        this.#arr[this.front()] = value;
+        this.#size++;
+    }
 
-  pop_back() {
-    // If empty → throw Error
-    // Must remove last element
-    // Must decrease size
-    // Must return removed value
-  }
+    push_front(value) {
+        if (this.full()) this.#ensureCapacityForOneMore();
+        let index = this.#index(this.front());
+        this.#arr[index] = value;
+        this.#size++;
+    }
 
-  clear() {
-    // Must reset deque to empty state
-    // Must keep current capacity
-    // Must reset front to 0
-    // Must set size to 0
-  }
+    pop_front() {
+        // If empty → throw Error
+        // Must remove front element
+        // Must move front forward circularly
+        // Must decrease size
+        // Must return removed value
+    }
 
-  /* ================= Extended Professional Methods ================= */
+    pop_back() {
+        // If empty → throw Error
+        // Must remove last element
+        // Must decrease size
+        // Must return removed value
+    }
 
-  reserve(newCapacity) {
-    // If newCapacity <= current capacity → do nothing
-    // Else:
-    //   Allocate new buffer
-    //   Copy elements in logical order
-    //   Reset front to 0
-  }
+    clear() {
+        // Must reset deque to empty state
+        // Must keep current capacity
+        // Must reset front to 0
+        // Must set size to 0
+    }
 
-  shrinkToFit() {
-    // Must reduce capacity to size
-    // Must reallocate buffer
-    // Must preserve order
-  }
+    /* ================= Extended Professional Methods ================= */
 
-  rotateLeft(k = 1) {
-    // Must rotate deque left by k steps
-    // Logical front shifts forward
-    // Must work with k > size
-  }
+    reserve(newCapacity) {
+        // If newCapacity <= current capacity → do nothing
+        // Else:
+        //   Allocate new buffer
+        //   Copy elements in logical order
+        //   Reset front to 0
+    }
 
-  rotateRight(k = 1) {
-    // Must rotate deque right by k steps
-    // Logical front shifts backward
-  }
+    shrinkToFit() {
+        // Must reduce capacity to size
+        // Must reallocate buffer
+        // Must preserve order
+    }
 
-  swap(i, j) {
-    // If indices invalid → throw Error
-    // Must swap logical elements
-  }
+    rotateLeft(k = 1) {
+        // Must rotate deque left by k steps
+        // Logical front shifts forward
+        // Must work with k > size
+    }
 
-  /* ================= Search & Utilities ================= */
+    rotateRight(k = 1) {
+        // Must rotate deque right by k steps
+        // Logical front shifts backward
+    }
 
-  find(value) {
-    // Must return first logical index of value
-    // If not found → return -1
-  }
+    swap(i, j) {
+        // If indices invalid → throw Error
+        // Must swap logical elements
+    }
 
-  includes(value) {
-    // Must return true if value exists
-    // Otherwise false
-  }
+    /* ================= Search & Utilities ================= */
 
-  toArray() {
-    // Must return normal JS array
-    // Must preserve logical order
-  }
+    find(value) {
+        // Must return first logical index of value
+        // If not found → return -1
+    }
 
-  clone() {
-    // Must return deep copy of deque
-    // New instance must not share buffer
-  }
+    includes(value) {
+        // Must return true if value exists
+        // Otherwise false
+    }
 
-  equals(otherDeque) {
-    // Must return true if:
-    // same size AND same logical values
-  }
+    toArray() {
+        // Must return normal JS array
+        // Must preserve logical order
+    }
 
-  /* ================= Iteration ================= */
+    clone() {
+        // Must return deep copy of deque
+        // New instance must not share buffer
+    }
 
-  [Symbol.iterator]() {
-    // Must iterate from front → back
-    // Must not expose internal buffer layout
-  }
+    equals(otherDeque) {
+        // Must return true if:
+        // same size AND same logical values
+    }
 
-  values() {
-    // Must return value iterator
-  }
+    /* ================= Iteration ================= */
 
-  keys() {
-    // Must return iterator of logical indices 0 → size-1
-  }
+    [Symbol.iterator]() {
+        // Must iterate from front → back
+        // Must not expose internal buffer layout
+    }
 
-  entries() {
-    // Must return iterator of [index, value]
-  }
+    values() {
+        // Must return value iterator
+    }
 
-  /* ================= Functional Style ================= */
+    keys() {
+        // Must return iterator of logical indices 0 → size-1
+    }
 
-  forEach(fn) {
-    // Must call fn(value, index, thisDeque)
-  }
+    entries() {
+        // Must return iterator of [index, value]
+    }
 
-  map(fn) {
-    // Must return new deque with mapped values
-  }
+    /* ================= Functional Style ================= */
 
-  filter(fn) {
-    // Must return new deque with filtered values
-  }
+    forEach(fn) {
+        // Must call fn(value, index, thisDeque)
+    }
 
-  reduce(fn, initial) {
-    // Must behave like Array.reduce
-    // Must throw if empty and no initial value
-  }
+    map(fn) {
+        // Must return new deque with mapped values
+    }
+
+    filter(fn) {
+        // Must return new deque with filtered values
+    }
+
+    reduce(fn, initial) {
+        // Must behave like Array.reduce
+        // Must throw if empty and no initial value
+    }
 }
