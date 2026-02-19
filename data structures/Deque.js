@@ -37,7 +37,7 @@ class Deque {
 
     #index(i) {
         if (this.empty()) throw new RangeError('Out of Range');
-        return this.#mod(i + this.#size);
+        return this.#mod(i + this.#front);
     }
 
     #resize() {
@@ -45,11 +45,11 @@ class Deque {
         for (let i of this) {
             arr.push_back(i)
         }
-        this.#arr = arr;
+        this.#arr = arr.#arr;
     }
 
     #ensureCapacityForOneMore() {
-        if (this.#size < this.#cap) return;
+        if (!this.full()) return;
         this.#resize();
         this.#front = 0;
     }
@@ -75,14 +75,14 @@ class Deque {
 
     push_back(value) {
         if (this.full()) this.#ensureCapacityForOneMore();
-        this.#front = (this.front() - 1 + this.#cap) % this.#cap;
-        this.#arr[this.front()] = value;
+        this.#front = (this.#front - 1 + this.#cap) % this.#cap;
+        this.#arr[this.#front] = value;
         this.#size++;
     }
 
     push_front(value) {
         if (this.full()) this.#ensureCapacityForOneMore();
-        let index = this.#index(this.front());
+        let index = this.#index(this.#front);
         this.#arr[index] = value;
         this.#size++;
     }
@@ -116,7 +116,7 @@ class Deque {
         if (newCapacity <= this.#cap) return;
         let newAddress = new Array(newCapacity).fill(undefined);
         for (let i = 0; i < this.#size; i++) {
-            newAddress[i] = newCapacity[i];
+            newAddress[i] = this.at(i);
         }
         this.#cap = newCapacity;
         this.#front = 0;
@@ -134,18 +134,14 @@ class Deque {
 
     rotateLeft(k = 1) {
         if (k <= 0) return;
-
-        let count = 0;
-        k %= this.#arr.cap;
-        for (let i of this.#arr.slice(this.capacity() - k).concat(this.#arr.slice(0, this.capacity() - k))) {
-            this.#arr[count++] = i
-        }
-
+        k %= this.size()
+        this.#front = (this.#front + k) % this.#cap;
     }
 
     rotateRight(k = 1) {
-        // Must rotate deque right by k steps
-        // Logical front shifts backward
+        if (k <= 0) return;
+        k %= this.size()
+        this.#front = (this.#front - k + this.capacity()) % this.#cap;
     }
 
     swap(i, j) {
@@ -173,14 +169,22 @@ class Deque {
     toArray() {
         let arr = new Array(this.#size);
         for (let i = 0; i < this.size(); ++i) {
-            arr[i] = this.#arr[i];
+            arr[i] = this.at(i);
         }
         return arr;
     }
 
+    #deepCopy(val) {
+        if (typeof val !== 'object' && val != null) return val;
+        let copy = new Deque();
+        for (let i = 0; i < this.size(); ++i) {
+            copy.push_back(this.#deepCopy(this.at(i)));
+        }
+        return copy;
+    }
+
     clone() {
-        // Must return deep copy of deque
-        // New instance must not share buffer
+        return this.#deepCopy();
     }
 
     equals(otherDeque) {
