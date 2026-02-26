@@ -35,31 +35,50 @@ class BST {
     insert(value) {
         if(value instanceof Node) value = value.value;
         let curr = this.#root;
-        while (curr) {
-            if(curr.value > value && curr.left){
-                curr = curr.left;
-            } else if(curr.value < value && curr.right){
-                curr = curr.right;
-            } else break
+        if(!this.#root){
+            this.#root = new Node(value);
+            this.#size++;
+            return;
         }
-        if(curr.value > value) curr.left = new Node(value);
-        if(curr.value < value) curr.right = new Node(value);
+        let p = null;
+        while (curr) {
+            p = curr;
+            if(curr.data > value && curr.left){
+                curr = curr.left;
+            } else if(curr.data < value && curr.right){
+                curr = curr.right;
+            } else break;
+        }
+        if(p.data > value) p.left = new Node(value);
+        else p.right = new Node(value);
         this.#size++;
     }
 
     delete(value) {
-        // Must remove node with given value if exists
-        // Must preserve BST structure
-        // Must correctly handle 3 cases:
-        //   1) Leaf node
-        //   2) Node with one child
-        //   3) Node with two children
-        // Must decrease size if node removed
+        if(!value) return false;
+        let curr = this.#root;
+        let parent = null;
+        while (curr) {
+            parent = curr;
+            if(curr.data > value && curr.left){
+                curr = curr.left;
+            } else if (curr.data < value && curr.right){
+                curr = curr.right;
+            } else break;
+        }
+        if(!curr) return false;
+        if(!curr.left || !curr.right) {
+            let child = curr.left || curr.right;
+            if(!parent) parent = child;
+            if(parent.left === curr) parent.left = child;
+            else parent.right = child;
+        }
+        this.#size--;
+        return true;
     }
 
     contains(value) {
-        // Must return true if value exists in tree
-        // Otherwise false
+        return !!this.inorder_itr().find(t => t === value);
     }
 
     /* ================= Height & Depth ================= */
@@ -74,38 +93,60 @@ class BST {
         return counter;
     }
     get_height(){
-        return Math.max(this.#counter(this.#root.left),this.#counter(this.#root.right));
+        return Math.max(this.#counter(this.#root.left),this.#counter(this.#root.right)) + 1;
     }
 
     get_depth(value) {
-        // Must return distance from root to node
-        // Root depth = 0
-        // If value not found → return -1
+        if(!this.contains(value)) return -1;
+        let curr = this.#root;
+        let counter = 0;
+        while (curr) {
+            curr = curr.val > value ? curr.left : curr.right;
+            counter++;
+        }
+        return counter;
     }
 
     /* ================= Min / Max ================= */
 
     find_min() {
-        // Must return smallest value in tree
-        // If empty → return undefined or throw
-        // Must traverse leftmost path
+        if (this.is_empty()) throw new RangeError('Out of Range');
+        let curr = this.#root;
+        while(curr) curr = curr.left
+        return curr.data;
     }
 
     find_max() {
-        // Must return largest value in tree
-        // If empty → return undefined or throw
-        // Must traverse rightmost path
+        if (this.is_empty()) throw new RangeError('Out of Range');
+        let curr = this.#root;
+        while(curr) curr = curr.right
+        return curr.data;
     }
 
     /* ================= Traversals ================= */
 
     level_order() {
-        // Must return array of values using BFS
-        // Must use queue
-        // Order: level by level from root
+        if(!this.#root) return;
+        const Queue = require('./Queue');
+        let q = new Queue(1000);
+        q.enqueue(this.#root);
+        const stack = [];
+        while(!q.is_empty()) {
+            let lvl = q.size();
+            for(let i = 0;i < lvl;++i){
+                const node = q.dequeue();
+                stack.push(node.data);
+                if(node.left) q.enqueue(node.left);
+                if(node.right) q.enqueue(node.right);
+            }
+        }
+        return stack.reverse();
     }
 
     inorder_rec() {
+        if(!this.#root) return;
+        const stack = [];
+        return this.#_inorder(this.#root,stack);
         // Must return values in sorted order
         // Traversal: left → root → right
         // Recursive implementation
@@ -131,7 +172,7 @@ class BST {
     }
 
     postorder_itr() {
-        // Iterative postorder traversal
+        // Iterative postorder traversalinorder_rec()
         // May use two stacks
     }
 
@@ -177,8 +218,16 @@ class BST {
     /* ================= Iteration ================= */
 
     [Symbol.iterator]() {
-        // Must iterate tree in inorder (sorted order)
-        // Must not modify tree
+        let arr = this.inorder_rec();
+        let i = 0;
+        return {
+            next(){
+                if(i < arr.length){
+                    return {value:arr[i++],done:false};
+                }
+                return {value:undefined,done: true};
+            }
+        }
     }
 
     values() {
@@ -214,7 +263,11 @@ class BST {
     }
 
     #_inorder(node, result) {
-        // Recursive inorder traversal helper
+        if(!node) return;
+        this.#_inorder(node.left,result);
+        result.push(node.data)
+        this.#_inorder(node.right,result);
+        return result;
     }
 
     #_preorder(node, result) {
@@ -225,3 +278,10 @@ class BST {
         // Recursive postorder traversal helper
     }
 }
+
+let tree = new BST();
+tree.insert(new Node(5));
+tree.insert(new Node(2));
+tree.insert(new Node(3));
+tree.insert(new Node(4));
+for(let i of tree) console.log(i);
