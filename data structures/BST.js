@@ -297,7 +297,6 @@ class BST {
 
     equals(otherTree) {
         if(!otherTree || otherTree.#size !== this.#size) return false;
-        if(otherTree.#root === this.#root && this.#root == null) return true;
         return this.#equals(otherTree.#root, this.#root);
     }
 
