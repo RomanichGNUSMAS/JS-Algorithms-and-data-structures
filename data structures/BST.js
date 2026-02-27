@@ -58,53 +58,76 @@ class BST {
         if(!value) return false;
         let curr = this.#root;
         let parent = null;
-        while (curr) {
+        while (curr && curr.data !== value) {
             parent = curr;
-            if(curr.data > value && curr.left){
+            if(curr.data > value){
                 curr = curr.left;
-            } else if (curr.data < value && curr.right){
+            } else if (curr.data < value){
                 curr = curr.right;
             } else break;
         }
         if(!curr) return false;
-        if(!curr.left || !curr.right) {
+        if(!curr.left || !curr.right){
             let child = curr.left || curr.right;
-            if(!parent) parent = child;
-            if(parent.left === curr) parent.left = child;
-            else parent.right = child;
+            if(!parent) {
+                this.#root = child;
+            }
+            else if (parent.left === curr) {
+                parent.left = child;
+            } else {
+                parent.right = child;
+            }
+        }
+        else {
+                let Scurr = curr.right;
+                let Sparent = curr;
+                while(Scurr?.left){
+                    Sparent = Scurr;
+                    Scurr = Scurr.left;
+                }
+                curr.data = Scurr.data;
+                if(!Scurr.left || !Scurr.right){
+                    if(Sparent.left === Scurr){
+                        Sparent.left = Scurr.left || Scurr.right;
+                    }
+                    else {
+                        Sparent.right = Scurr.left || Scurr.right;
+                    }
+                }
         }
         this.#size--;
         return true;
     }
 
     contains(value) {
-        return !!this.inorder_itr().find(t => t === value);
+        let curr = this.#root;
+        while(curr && curr.data !== value) {
+            if(curr.data > value) curr = curr.left;
+            else if(curr.data < value) curr = curr.right;
+            else break;
+        }
+        return !!curr ? value : -1;
     }
 
     /* ================= Height & Depth ================= */
-    #counter (thisIS){
-        if(this.is_empty()) return 0;
-        let counter = 1;
-        let curr = thisIS;
-        while (curr) {
-            curr = curr.left || curr.right;
-            counter++;
-        }
-        return counter;
-    }
     get_height(){
-        return Math.max(this.#counter(this.#root.left),this.#counter(this.#root.right)) + 1;
+        return this.#_get_height(this.#root);
     }
 
     get_depth(value) {
-        if(!this.contains(value)) return -1;
         let curr = this.#root;
         let counter = 0;
         while (curr) {
-            curr = curr.val > value ? curr.left : curr.right;
-            counter++;
+            if(curr.data > value) {
+                curr = curr.left
+                counter++;
+            }
+            else if(curr.data < value) {
+                curr = curr.right;
+                counter++;
+            } else break
         }
-        return counter;
+        return !!curr ? counter : -1;
     }
 
     /* ================= Min / Max ================= */
@@ -146,73 +169,136 @@ class BST {
     inorder_rec() {
         if(!this.#root) return;
         const stack = [];
-        return this.#_inorder(this.#root,stack);
-        // Must return values in sorted order
-        // Traversal: left → root → right
-        // Recursive implementation
+        this.#_inorder(this.#root,stack);
+        return stack;
     }
 
     inorder_itr() {
-        // Must perform inorder traversal using stack
-        // Must return sorted values
+        const result = new Array();
+        const stack = new Array();
+        let curr = this.#root;
+        while(curr || stack.length) {
+            while(curr) {
+                stack.push(curr.data);
+                curr = curr.left;
+            }
+
+            curr = stack.pop();
+            result.push(curr.data);
+            curr = curr.right;
+        }
+        return result;
     }
 
     preorder_rec() {
-        // Traversal: root → left → right
-        // Recursive implementation
+        const stack = [];
+        this.#_preorder(this.#root,stack);
+        return stack;
     }
 
     preorder_itr() {
-        // Iterative preorder traversal using stack
+       if(!this.#root) return;
+       const [res,stack] = [[this.#root] ,[]];
+       while(stack.length) {
+           const node = stack.pop();
+           res.push(node.data);
+           if(node.right) stack.push(node.right);
+           if(node.left) stack.push(node.left);
+       }
+       return res;
     }
 
     postorder_rec() {
-        // Traversal: left → right → root
-        // Recursive implementation
+        const stack = [];
+        this.#_postorder(this.#root,stack);
+        return stack;
     }
 
     postorder_itr() {
-        // Iterative postorder traversalinorder_rec()
-        // May use two stacks
+        if(!this.#root) return;
+        const [stack,res] = [[this.#root] ,[]];
+        while(stack.length) {
+            const node = stack.pop();
+            res.push(node.data);
+            if(node.left) stack.push(node.left);
+            if(node.right) stack.push(node.right);
+        }
+        return res.reverse();
     }
 
     /* ================= Advanced Operations ================= */
 
     find_successor(value) {
-        // Must return inorder successor of node
-        // Smallest value greater than given value
-        // If none → return null
+        if(!this.#root) return;
+        let curr = this.#root;
+        let ancestor = null;
+        while(curr && curr.data !== value) {
+            if(curr.data > value) {
+                ancestor = curr;
+                curr = curr.left;
+            }
+            else if(curr.data < value) curr = curr.right;
+            else break;
+        }
+        if(!curr) return -1;
+        let successor = curr.right;
+        if(successor) {
+            while(successor?.left) successor = successor.left;
+            return successor.data;
+        }
+        return ancestor ? ancestor.data : -1;
     }
 
     find_predecessor(value) {
-        // Must return inorder predecessor of node
-        // Largest value smaller than given value
+        if(!this.#root) return;
+        let curr = this.#root;
+        let ancestor = null;
+        while(curr && curr.data !== value) {
+            if(curr.data > value) curr = curr.left;
+            else if(curr.data < value) {
+                ancestor = curr;
+                curr = curr.right;
+            }
+            else break;
+        }
+        if(!curr) return -1;
+        let predecessor = curr.left;
+        if(predecessor) {
+            while(predecessor?.right) predecessor = predecessor.right;
+            return predecessor.data;
+        }
+        return ancestor ? ancestor.data : -1;
     }
 
     is_balanced() {
-        // Must return true if tree is height-balanced
-        // |height(left) - height(right)| <= 1 for all nodes
+        return Math.abs(this.#_get_height(this.#root.left) - this.#_get_height(this.#root.right)) <= 1;
     }
 
     validate_BST() {
-        // Must verify tree satisfies BST property
-        // All nodes in left subtree < node < right subtree
+        let inorder = this.inorder_rec();
+        for(let i = 0;i < inorder.length - 1;++i){
+            if(inorder[i] > inorder[i+1]) return 'invalid';
+        }
+        return 'valid'
     }
 
     /* ================= Utilities ================= */
 
     toArray() {
-        // Must return sorted array of values
-        // Should use inorder traversal
+        return this.inorder_rec();
     }
 
     clone() {
-        // Must return deep copy of entire tree
-        // New tree must not share nodes
+        let newTree = new BST();
+        newTree.#root = this.#clone(this.#root);
+        newTree.#size = this.#size;
+        return newTree;
     }
 
     equals(otherTree) {
-        // Must return true if trees have identical structure AND values
+        if(!otherTree || otherTree.#size !== this.#size) return false;
+        if(otherTree.#root === this.#root && this.#root == null) return true;
+        return this.#equals(otherTree.#root, this.#root);
     }
 
     /* ================= Iteration ================= */
@@ -221,7 +307,7 @@ class BST {
         let arr = this.inorder_rec();
         let i = 0;
         return {
-            next(){
+            next: () => {
                 if(i < arr.length){
                     return {value:arr[i++],done:false};
                 }
@@ -230,36 +316,24 @@ class BST {
         }
     }
 
-    values() {
-        // Must return iterator of values (inorder)
+    *values() {
+        yield* this.inorder_itr();
     }
 
-    entries() {
-        // Must return iterator of [index, value] in sorted order
+    *entries() {
+        let inorder = this.inorder_itr();
+        for(let i = 0;i < inorder.length;++i) {
+            yield [i,inorder[i]];
+        }
     }
 
     /* ================= Private Helpers ================= */
 
-    #_insert(node, value) {
-        // Recursive insertion helper
-        // Must return updated subtree root
-    }
-
-    #_delete(node, value) {
-        // Recursive deletion helper
-        // Must return updated subtree root
-    }
-
-    #_find_min(node) {
-        // Must return minimum value in subtree
-    }
-
-    #_find_max(node) {
-        // Must return maximum value in subtree
-    }
-
     #_get_height(node) {
-        // Must compute subtree height recursively
+        if(!node) return 0;
+        let left = this.#_get_height(node.left) + 1;
+        let right = this.#_get_height(node.right) + 1;
+        return Math.max(left, right);
     }
 
     #_inorder(node, result) {
@@ -267,21 +341,45 @@ class BST {
         this.#_inorder(node.left,result);
         result.push(node.data)
         this.#_inorder(node.right,result);
-        return result;
     }
 
     #_preorder(node, result) {
-        // Recursive preorder traversal helper
+        if(!node) return;
+        result.push(node.data);
+        this.#_preorder(node.left,result);
+        this.#_preorder(node.right,result);
     }
 
     #_postorder(node, result) {
-        // Recursive postorder traversal helper
+        if(!node) return;
+        this.#_postorder(node.left,result);
+        this.#_postorder(node.right,result);
+        result.push(node.data);
+    }
+
+    #clone(node) {
+        if(!node) return null;
+        let cloneNode = new Node(node.data);
+        cloneNode.left = this.#clone(node.left);
+        cloneNode.right = this.#clone(node.right);
+        return cloneNode;
+    }
+
+    #equals(a,b) {
+        if(!a && !b) return true;
+        if(!a || !b) return false;
+        if(a.data !== b.data) return false;
+        return this.#equals(a,b);
     }
 }
 
 let tree = new BST();
-tree.insert(new Node(5));
-tree.insert(new Node(2));
-tree.insert(new Node(3));
-tree.insert(new Node(4));
-for(let i of tree) console.log(i);
+tree.insert(5);
+tree.insert(2);
+tree.insert(3);
+tree.insert(4);
+let tree2 = new BST();
+tree2.insert(5);
+tree2.insert(2);
+
+console.log(tree.equals(tree2))
