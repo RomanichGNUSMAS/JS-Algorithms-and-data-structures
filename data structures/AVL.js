@@ -304,8 +304,8 @@ class AVL {
             }
             else {
                 if(curr.right) return this.#getMin(curr.right);
+                break;
             }
-            break;
         }
         return successor;
     }
