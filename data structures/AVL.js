@@ -163,13 +163,20 @@ class AVL {
     }
 
     #delete(node, value) {
-        // Recursive deletion helper
-        // Must handle:
-        //   leaf node
-        //   node with one child
-        //   node with two children (successor replacement)
-        // Must rebalance subtree
-        // Must return updated subtree root
+        if(!node) return node;
+        if(value < node.value) node.left = this.#delete(node.left, value);
+        else if(value > node.value) node.right = this.#delete(node.right, value);
+        else {
+            if (!node.left) return node.right;
+            if (!node.right) return node.left;
+
+            let temp = this.#getMin(node.right);
+            node.value = temp.value;
+            node.right = this.#delete(node.right, temp.value);
+        }
+        node.height =  1 +  Math.max(this.#getHeight(node.right),this.#getHeight(node.left));
+
+        return this.#reBalance(node);
     }
 
     #reBalance(node) {
