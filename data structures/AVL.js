@@ -39,10 +39,12 @@ class AVL {
     }
 
     delete(value) {
-        // Must remove node if exists
-        // Must rebalance tree after deletion
-        // Must update heights
-        // Must decrease size if removed
+        if (this.search(value)) {
+            this.#root = this.#delete(this.#root, value);
+            this.#size--;
+            return true;
+        }
+        return false;
     }
 
     search(value) {
