@@ -91,7 +91,7 @@ class AVL {
 
     preorder_rec() {
         const stack = [];
-        this.#preorder_rec(stack);
+        this.#preorder_rec(stack,stack);
         return stack;
     }
 
@@ -214,8 +214,8 @@ class AVL {
         tmp.left = node;
         node.right = tmp2;
 
-        node.height = this.#getHeight(node);
-        tmp.height = this.#getHeight(tmp);
+        node.height = 1 + Math.max(this.#getHeight(node.left), this.#getHeight(node.right));
+        tmp.height = 1 + Math.max(this.#getHeight(tmp.left), this.#getHeight(tmp.right));
         return tmp;
     }
 
@@ -226,8 +226,8 @@ class AVL {
         tmp.right = node;
         node.left = tmp2;
 
-        node.height = this.#getHeight(node);
-        tmp.height = this.#getHeight(tmp);
+        node.height = 1 + Math.max(this.#getHeight(node.left), this.#getHeight(node.right));
+        tmp.height = 1 + Math.max(this.#getHeight(tmp.left), this.#getHeight(tmp.right));
         return tmp;
     }
 
