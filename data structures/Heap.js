@@ -29,7 +29,7 @@ class Priority_Queue {
     }
 
     comparator() {
-        return this.#cmp(1,0)
+        return this.#cmp
     }
 
     /* ================= Access Operations ================= */
@@ -51,7 +51,8 @@ class Priority_Queue {
     }
 
     pop() {
-        this.#swap(0, this.#size);
+        if(this.is_empty()) return NaN;
+        this.#swap(0, this.#size - 1);
         const popped = this.#heap.pop();
         if(this.#is_Max) this.#shift_down_for_max_heap(0);
         else this.#shift_down_for_min_heap(0);
@@ -77,6 +78,7 @@ class Priority_Queue {
             this.#shift_up_for_min_heap(idx);
             this.#shift_down_for_min_heap(idx);
         }
+        this.#size--;
         return rm;
     }
 
@@ -113,15 +115,15 @@ class Priority_Queue {
     #shift_down_for_min_heap(index) {
         let min = index;
         let [left,right] = [index * 2 + 1,index * 2 + 2];
-        if(this.#heap[min] > this.#heap[left]) {
+        if(this.#heap[left] && this.#heap[min] > this.#heap[left]) {
             min = left;
         }
-        if(this.#heap[min] > this.#heap[right]) {
+        if(this.#heap[right] && this.#heap[min] > this.#heap[right]) {
             min = right;
         }
         if(index !== min) {
             this.#swap(min, index);
-            this.#shift_up_for_min_heap(min);
+            this.#shift_down_for_min_heap(min);
         }
     }
 
@@ -129,7 +131,7 @@ class Priority_Queue {
         let parent = ((index - 1) / 2) >> 0;
         if(this.#heap[parent] < this.#heap[index]) {
             this.#swap(parent, index);
-            this.#shift_up_for_min_heap(parent);
+            this.#shift_up_for_max_heap(parent);
         }
     }
 
@@ -144,15 +146,15 @@ class Priority_Queue {
     #shift_down_for_max_heap(index) {
         let max = index;
         let [left,right] = [index * 2 + 1,index * 2 + 2];
-        if(this.#heap[max] > this.#heap[left]) {
+        if(this.#heap[left] && this.#heap[max] < this.#heap[left]) {
             max = left;
         }
-        if(this.#heap[max] > this.#heap[right]) {
+        if(this.#heap[right] && this.#heap[max] < this.#heap[right]) {
             max = right;
         }
         if(index !== max) {
             this.#swap(max, index);
-            this.#shift_up_for_min_heap(max);
+            this.#shift_down_for_max_heap(max);
         }
     }
 
@@ -171,6 +173,7 @@ class Priority_Queue {
 
     heapify(array) {
         this.#heap = [...array]
+        this.#size = array.length;
         const siftdown = this.#cmp(1,0) > 0 ? this.#shift_down_for_max_heap : this.#shift_down_for_min_heap;
         let lastP = ((this.#heap.length - 1) / 2) >> 0;
         for(let i = lastP; i >= 0; i--) {
@@ -182,6 +185,9 @@ class Priority_Queue {
         if(this.is_empty()) return false;
             const rm = this.#heap[0];
         this.#heap[0] = value;
+        if(this.#is_Max) {
+            this.#shift_down_for_max_heap(0);
+        } else this.#shift_down_for_min_heap(0);
         return rm;
     }
 
@@ -196,7 +202,7 @@ class Priority_Queue {
         let i = 0;
         return {
             next: () => {
-                if(i>this.#size) return {value: this.#heap[i++], done:false};
+                if(i<this.#size) return {value: this.#heap[i++], done:false};
                 return {value: undefined, done:true};
             }
         }
